@@ -1,0 +1,15 @@
+---
+# defaults file for ansible-role-win-snmp
+
+# @var win_snmp_auto_reboot:description: automatically reboot when required
+win_snmp_auto_reboot: true
+
+# @var win_snmp_firewall_open:description: apply firewall rules
+win_snmp_firewall_apply: true
+
+# @var win_snmp_firewall_rules:description: list of firewall rules to allow
+win_snmp_firewall_rules:
+  - { name: "SNMP UDP Port 161 In", direction: in, protocol: udp, localport: 161 }
+  - { name: "SNMP UDP Port 161 Out", direction: out, protocol: udp, localport: 161 }
+  - { name: "SNMPTRAP UDP Port 162 In", direction: in, protocol: udp, localport: 162 }
+  - { name: "SNMPTRAP UDP Port 162 Out", direction: out, protocol: udp, localport: 162 }

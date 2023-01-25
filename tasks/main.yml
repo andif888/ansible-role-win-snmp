@@ -1,0 +1,25 @@
+---
+# tasks file for ansible-role-win-snmp
+- name: Install SNMP
+  ansible.windows.win_optional_feature:
+    name: SNMP
+    state: present
+  register: result_snmp_install
+
+- name: Reboot if installing SNMP requires it
+  ansible.windows.win_reboot:
+  when:
+    - result_snmp_install.reboot_required
+    - win_snmp_auto_reboot
+
+- name: Firewall rule to allow SNMP
+  community.windows.win_firewall_rule:
+    name: "{{ item.name }}"
+    localport: "{{ item.localport }}"
+    action: allow
+    direction: "{{ item.direction }}"
+    protocol: "{{ item.protocol }}"
+    state: present
+    enabled: true
+  loop: "{{ win_snmp_firewall_rules }}"
+  when: win_snmp_firewall_apply
