@@ -1,16 +1,55 @@
 ---
 # tasks file for ansible-role-win-snmp
-- name: Install SNMP
+- name: Get wuauserv start_mode
+  ansible.windows.win_service:
+    name: wuauserv
+  register: wuauserv_state
+  
+- debug:
+    var: wuauserv_state.start_mode
+
+- name: Set wuauserv start_mode=manual
+  ansible.windows.win_service:
+    name: wuauserv
+    start_mode: manual
+  register: wuauserv_state_modified
+  when: wuauserv_state.start_mode == 'disabled'
+
+- name: Install SNMP (windows server)
   ansible.windows.win_optional_feature:
     name: SNMP
     state: present
-  register: result_snmp_install
+  register: result_snmp_install_server
+  when:
+    - ansible_os_installation_type == "Server"
 
 - name: Reboot if installing SNMP requires it
   ansible.windows.win_reboot:
   when:
-    - result_snmp_install.reboot_required
+    - ansible_os_installation_type == "Server"
+    - result_snmp_install_server is defined
+    - result_snmp_install_server.reboot_required    
     - win_snmp_auto_reboot
+
+- name: Install SNMP (windows client)
+  community.windows.win_psexec:
+    command: 'Powershell Add-WindowsCapability -Online -Name "SNMP.Client~~~~0.0.1.0"'
+  register: result_snmp_install_client
+  when:
+    - ansible_os_installation_type == "Client"
+
+- name: Debug result_snmp_install_client
+  ansible.builtin.debug:
+    var: result_snmp_install_client
+  when:
+    - ansible_os_installation_type == "Client"
+    - result_snmp_install_client is defined
+
+- name: Restore wuauserv start_mode={{ wuauserv_state.start_mode }}
+  ansible.windows.win_service:
+    name: wuauserv
+    start_mode: '{{ wuauserv_state.start_mode }}'
+  when: wuauserv_state_modified.changed
 
 - name: Firewall rule to allow SNMP
   community.windows.win_firewall_rule:
