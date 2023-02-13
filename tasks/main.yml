@@ -32,8 +32,7 @@
     - win_snmp_auto_reboot
 
 - name: Install SNMP (windows client)
-  community.windows.win_psexec:
-    command: 'Powershell Add-WindowsCapability -Online -Name "SNMP.Client~~~~0.0.1.0"'
+  ansible.windows.win_command: 'psexec.exe -accepteula -nobanner -i 1 -s powershell.exe -Command "& {Add-WindowsCapability -Online -Name SNMP.Client~~~~0.0.1.0}"'
   register: result_snmp_install_client
   when:
     - ansible_os_installation_type == "Client"
